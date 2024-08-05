@@ -90,6 +90,14 @@ export class GameGateway
     }
   }
 
+  checkWinner(room: string) {
+    const { winner, pattern } = this.adminService.getWinner(room);
+    if (winner !== null) {
+      const scores = this.adminService.updateScore(room);
+      this.io.to(room).emit('game_won', winner, pattern, scores);
+    }
+  }
+
   @SubscribeMessage('end_game')
   endGame(@MessageBody() room: string) {
     try {
@@ -101,19 +109,8 @@ export class GameGateway
     }
   }
 
-  checkWinner(room: string) {
-    const { winner, pattern } = this.adminService.getWinner(room);
-    if (winner !== null) {
-      const scores = this.adminService.updateScore(room);
-      this.io.to(room).emit('game_won', winner, pattern, scores);
-
-      setTimeout(() => {
-        this.nextRound(room);
-      }, 1000);
-    }
-  }
-
-  nextRound(room: string) {
+  @SubscribeMessage('next_round')
+  nextRound(@MessageBody() room: string) {
     try {
       const round = this.adminService.nextRound(room);
       this.io.to(room).emit('new_round', round);
